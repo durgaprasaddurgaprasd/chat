@@ -43,7 +43,7 @@
         }
 
         /* Input fields and button */
-        select, input[type="text"], button {
+        input[type="text"], button {
             padding: 10px;
             width: 100%;
             border: 1px solid #ddd;
@@ -80,13 +80,6 @@
             margin-left: auto;
         }
 
-        /* Dropdown select styling */
-        select {
-            width: auto;
-            max-width: 200px;
-            cursor: pointer;
-        }
-
         /* Mobile responsiveness */
         @media (max-width: 768px) {
             #chat-box {
@@ -94,7 +87,7 @@
                 height: 200px;
             }
 
-            select, input[type="text"], button {
+            input[type="text"], button {
                 width: 100%;
             }
         }
@@ -104,20 +97,15 @@
 
     <h2>Spring Boot WebSocket Chat</h2>
 
-    <!-- Name Selection Section -->
-    <div>
-        <label for="name">Choose your name:</label>
-        <select id="name">
-            <option value="" disabled selected>Select a name</option>
-            <option value="Alice">Alice</option>
-            <option value="Bob">Bob</option>
-            <option value="Charlie">Charlie</option>
-            <!-- Add more names here as needed -->
-        </select>
+    <!-- Name Input Section -->
+    <div id="name-section">
+        <label for="name">Enter your name:</label>
+        <input type="text" id="name" placeholder="Enter your name">
+        <button id="enter-chat-btn">Enter Chat</button>
     </div>
 
-    <!-- Message Input Section -->
-    <div>
+    <!-- Message Input Section (Initially hidden until name is entered) -->
+    <div id="message-section" style="display: none;">
         <input type="text" id="message" placeholder="Enter message">
         <button id="sendBtn" disabled>Send</button>
     </div>
@@ -130,7 +118,7 @@
         var socket = new SockJS("https://chat-production-b6fa.up.railway.app/server1"); // Updated URL
         var stompClient = Stomp.over(socket);
 
-        // Fetch old messages when the page loads
+        // Function to fetch old messages when the page loads
         window.onload = function() {
             fetchMessages();
         };
@@ -190,12 +178,29 @@
             document.getElementById("message").value = ""; // Clear input after sending
         }
 
-        // Enable/Disable Send button based on input fields
-        document.getElementById("name").addEventListener("change", function() {
-            document.getElementById("sendBtn").disabled = !document.getElementById("name").value.trim();
+        // Function to enable/disable Send button based on input fields
+        document.getElementById("name").addEventListener("input", function() {
+            var name = document.getElementById("name").value.trim();
+            document.getElementById("enter-chat-btn").disabled = !name; // Disable Enter Chat button if no name is entered
         });
 
-        // Add event listener for the "Send" button
+        // Event listener for the "Enter Chat" button
+        document.getElementById("enter-chat-btn").addEventListener("click", function() {
+            var name = document.getElementById("name").value.trim();
+
+            if (name) {
+                // Hide name input section and show message input section
+                document.getElementById("name-section").style.display = "none";
+                document.getElementById("message-section").style.display = "block";
+
+                // Enable the Send button
+                document.getElementById("sendBtn").disabled = false;
+            } else {
+                alert("Please enter a valid name.");
+            }
+        });
+
+        // Event listener for the "Send" button
         document.getElementById("sendBtn").addEventListener("click", sendMessage);
 
         // Send message on "Enter" key press
