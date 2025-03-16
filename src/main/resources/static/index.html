@@ -18,54 +18,53 @@
     <div id="chat-box"></div>
 
     <script>
-    var socket = new SockJS("https://random-name.ngrok.io/server1");
- // ✅ Correct WebSocket URL
-        var stompClient = Stomp.over(socket);
+    // Update the WebSocket URL to point to your Railway app
+    var socket = new SockJS("https://chat-production-b6fa.up.railway.app/server1"); // Updated URL
+    var stompClient = Stomp.over(socket);
 
-        stompClient.connect({}, function (frame) {
-            console.log("Connected: " + frame);
+    stompClient.connect({}, function (frame) {
+        console.log("Connected: " + frame);
 
-            // Subscribe to receive messages
-            stompClient.subscribe("/topic/return-to", function (message) {
-                var chatBox = document.getElementById("chat-box");
-                var messageData = JSON.parse(message.body);
+        // Subscribe to receive messages
+        stompClient.subscribe("/topic/return-to", function (message) {
+            var chatBox = document.getElementById("chat-box");
+            var messageData = JSON.parse(message.body);
 
-                var messageElement = document.createElement("p");
-                messageElement.textContent = messageData.name + ": " + messageData.content;
+            var messageElement = document.createElement("p");
+            messageElement.textContent = messageData.name + ": " + messageData.content;
 
-                chatBox.appendChild(messageElement);
-            });
+            chatBox.appendChild(messageElement);
         });
+    });
 
-        // Function to send a message
-        function sendMessage() {
-            var name = document.getElementById("name").value.trim();
-            var message = document.getElementById("message").value.trim();
+    // Function to send a message
+    function sendMessage() {
+        var name = document.getElementById("name").value.trim();
+        var message = document.getElementById("message").value.trim();
 
-            if (!name || !message) {
-                alert("Enter your name and message!");
-                return;
-            }
-
-            var messageObject = {
-                name: name,
-                content: message
-            };
-
-            stompClient.send("/app/messages", {}, JSON.stringify(messageObject));
-            document.getElementById("message").value = ""; // Clear input after sending
+        if (!name || !message) {
+            alert("Enter your name and message!");
+            return;
         }
 
-        // ✅ Add event listener for the "Send" button
-        document.getElementById("sendBtn").addEventListener("click", sendMessage);
+        var messageObject = {
+            name: name,
+            content: message
+        };
 
-        // ✅ Send message on "Enter" key press
-        document.getElementById("message").addEventListener("keypress", function (event) {
-            if (event.key === "Enter") {
-                sendMessage();
-            }
-        });
+        stompClient.send("/app/messages", {}, JSON.stringify(messageObject));
+        document.getElementById("message").value = ""; // Clear input after sending
+    }
 
+    // Add event listener for the "Send" button
+    document.getElementById("sendBtn").addEventListener("click", sendMessage);
+
+    // Send message on "Enter" key press
+    document.getElementById("message").addEventListener("keypress", function (event) {
+        if (event.key === "Enter") {
+            sendMessage();
+        }
+    });
     </script>
 </body>
 </html>
