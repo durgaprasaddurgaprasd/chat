@@ -20,8 +20,8 @@ public class MessageController {
     // Handle new messages and save them
     @MessageMapping("/messages")
     @SendTo("/topic/return-to")
-    public Message getcontent(Message message) {  // ✅ No @RequestBody here
-        System.out.println("Received message: " + message); // Debugging log
+    public Message getcontent(Message message) {
+        System.out.println("Received message: " + message);
 
         // Save message to MongoDB
         messageRepository.save(message);
@@ -32,6 +32,6 @@ public class MessageController {
     // Endpoint to fetch old messages
     @GetMapping("/messages/history")
     public List<Message> getChatHistory() {
-        return messageRepository.findAll(); // Retrieve all messages
+        return messageRepository.findAll(); // Retrieve all messages from MongoDB
     }
 }
