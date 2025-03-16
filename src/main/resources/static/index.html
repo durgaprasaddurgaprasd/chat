@@ -43,23 +43,20 @@
         }
 
         /* Input fields and button */
-        input[type="text"] {
+        select, input[type="text"], button {
             padding: 10px;
-            width: 70%;
+            width: 100%;
             border: 1px solid #ddd;
             border-radius: 5px;
-            margin: 10px;
+            margin: 10px 0;
             font-size: 16px;
         }
 
         button {
-            padding: 10px;
             background-color: #25d366;
             color: white;
             border: none;
-            border-radius: 5px;
             cursor: pointer;
-            font-size: 16px;
         }
 
         button:disabled {
@@ -83,6 +80,13 @@
             margin-left: auto;
         }
 
+        /* Dropdown select styling */
+        select {
+            width: auto;
+            max-width: 200px;
+            cursor: pointer;
+        }
+
         /* Mobile responsiveness */
         @media (max-width: 768px) {
             #chat-box {
@@ -90,13 +94,8 @@
                 height: 200px;
             }
 
-            input[type="text"] {
-                width: 60%;
-            }
-
-            button {
-                padding: 8px;
-                width: 30%;
+            select, input[type="text"], button {
+                width: 100%;
             }
         }
     </style>
@@ -105,10 +104,20 @@
 
     <h2>Spring Boot WebSocket Chat</h2>
 
-    <!-- Name Input Section -->
+    <!-- Name Selection Section -->
     <div>
-        <input type="text" id="name" placeholder="Enter your name">
-        <br>
+        <label for="name">Choose your name:</label>
+        <select id="name">
+            <option value="" disabled selected>Select a name</option>
+            <option value="Alice">Alice</option>
+            <option value="Bob">Bob</option>
+            <option value="Charlie">Charlie</option>
+            <!-- Add more names here as needed -->
+        </select>
+    </div>
+
+    <!-- Message Input Section -->
+    <div>
         <input type="text" id="message" placeholder="Enter message">
         <button id="sendBtn" disabled>Send</button>
     </div>
@@ -182,7 +191,7 @@
         }
 
         // Enable/Disable Send button based on input fields
-        document.getElementById("name").addEventListener("input", function() {
+        document.getElementById("name").addEventListener("change", function() {
             document.getElementById("sendBtn").disabled = !document.getElementById("name").value.trim();
         });
 
