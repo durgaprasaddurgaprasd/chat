@@ -7,25 +7,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
     <style>
-        /* Basic Styling for the page */
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            flex-direction: column;
-        }
-
-        h2 {
-            color: #25d366;
-            text-align: center;
-        }
-
-        /* Chat Container */
+        /* Basic styles */
         #chat-box {
             width: 100%;
             max-width: 600px;
@@ -42,7 +24,6 @@
             justify-content: flex-start;
         }
 
-        /* Input fields and button */
         input[type="text"], button {
             padding: 10px;
             width: 100%;
@@ -64,16 +45,16 @@
             cursor: not-allowed;
         }
 
-        /* Messages in the chat */
         p {
             padding: 8px;
             margin: 5px 0;
             background-color: #e1f7d5;
             border-radius: 5px;
             max-width: 80%;
+            display: inline-block;
+            position: relative;
         }
 
-        /* Align user's messages to the right */
         .user-message {
             background-color: #25d366;
             color: white;
@@ -95,118 +76,113 @@
 </head>
 <body>
 
-    <h2>Spring Boot WebSocket Chat</h2>
+    <h2>WebSocket Chat</h2>
 
-    <!-- Name Input Section -->
+    <!-- User Name Input -->
     <div id="name-section">
         <label for="name">Enter your name:</label>
         <input type="text" id="name" placeholder="Enter your name">
         <button id="enter-chat-btn">Enter Chat</button>
     </div>
 
-    <!-- Message Input Section (Initially hidden until name is entered) -->
+    <!-- Chat Section -->
     <div id="message-section" style="display: none;">
         <input type="text" id="message" placeholder="Enter message">
         <button id="sendBtn" disabled>Send</button>
     </div>
 
-    <!-- Chat Box -->
     <div id="chat-box"></div>
 
     <script>
-        // Update the WebSocket URL to point to your Railway app
-        var socket = new SockJS("https://chat-production-b6fa.up.railway.app/server1"); // Updated URL
-        var stompClient = Stomp.over(socket);
+        var socket;
+        var stompClient;
+        var userName = '';
+        var isUserEntered = false;
 
-        // Function to fetch old messages when the page loads
-        window.onload = function() {
-            fetchMessages();
-        };
+        // Connect to WebSocket after user enters their name
+        document.getElementById("enter-chat-btn").addEventListener("click", function() {
+            userName = document.getElementById("name").value.trim();
+            if (!userName) {
+                alert("Please enter your name!");
+                return;
+            }
+            connectToChat(userName);
+        });
 
-        // Fetch messages from the server (MongoDB)
-        function fetchMessages() {
-            fetch("https://chat-production-b6fa.up.railway.app/messages/history")
+        // Function to fetch previous messages for a user
+        function fetchMessages(userName) {
+            fetch(`https://chat-production-b6fa.up.railway.app/messages/history/${userName}`)
                 .then(response => response.json())
                 .then(data => {
                     var chatBox = document.getElementById("chat-box");
                     data.forEach(message => {
                         var messageElement = document.createElement("p");
                         messageElement.textContent = message.name + ": " + message.content;
+
+                        if (message.name === userName) {
+                            messageElement.classList.add("user-message");
+                        }
+
                         chatBox.appendChild(messageElement);
                     });
+                    chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom of the chat
                 })
-                .catch(error => console.error("Error fetching chat history:", error));
+                .catch(error => console.error("Error fetching messages:", error));
         }
 
-        stompClient.connect({}, function (frame) {
-            console.log("Connected: " + frame);
+        // Function to connect to WebSocket
+        function connectToChat(userName) {
+            socket = new SockJS("https://chat-production-b6fa.up.railway.app/server1");
+            stompClient = Stomp.over(socket);
 
-            // Subscribe to receive messages
-            stompClient.subscribe("/topic/return-to", function (message) {
-                var chatBox = document.getElementById("chat-box");
-                var messageData = JSON.parse(message.body);
+            stompClient.connect({}, function(frame) {
+                console.log("Connected: " + frame);
 
-                var messageElement = document.createElement("p");
-                messageElement.textContent = messageData.name + ": " + messageData.content;
+                // Fetch previous messages
+                fetchMessages(userName);
 
-                // Add a class for the user message to style it differently
-                if (messageData.name === document.getElementById("name").value) {
-                    messageElement.classList.add("user-message");
-                }
+                // Subscribe to new messages
+                stompClient.subscribe("/topic/return-to", function(message) {
+                    var messageData = JSON.parse(message.body);
+                    var chatBox = document.getElementById("chat-box");
+                    var messageElement = document.createElement("p");
+                    messageElement.textContent = messageData.name + ": " + messageData.content;
 
-                chatBox.appendChild(messageElement);
-                chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom of chat
+                    if (messageData.name === userName) {
+                        messageElement.classList.add("user-message");
+                    }
+
+                    chatBox.appendChild(messageElement);
+                    chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom of the chat
+                });
+
+                // Show message section and hide name section
+                document.getElementById("name-section").style.display = "none";
+                document.getElementById("message-section").style.display = "block";
             });
-        });
+        }
 
         // Function to send a message
-        function sendMessage() {
-            var name = document.getElementById("name").value.trim();
-            var message = document.getElementById("message").value.trim();
-
-            if (!name || !message) {
-                alert("Enter your name and message!");
+        document.getElementById("sendBtn").addEventListener("click", function() {
+            var messageContent = document.getElementById("message").value.trim();
+            if (!messageContent) {
+                alert("Please enter a message!");
                 return;
             }
 
-            var messageObject = {
-                name: name,
-                content: message
+            var message = {
+                name: userName,
+                content: messageContent
             };
 
-            stompClient.send("/app/messages", {}, JSON.stringify(messageObject));
-            document.getElementById("message").value = ""; // Clear input after sending
-        }
-
-        // Function to enable/disable Send button based on input fields
-        document.getElementById("name").addEventListener("input", function() {
-            var name = document.getElementById("name").value.trim();
-            document.getElementById("enter-chat-btn").disabled = !name; // Disable Enter Chat button if no name is entered
+            stompClient.send("/app/messages", {}, JSON.stringify(message));
+            document.getElementById("message").value = ''; // Clear input field
         });
-
-        // Event listener for the "Enter Chat" button
-        document.getElementById("enter-chat-btn").addEventListener("click", function() {
-            var name = document.getElementById("name").value.trim();
-
-            if (name) {
-                // Hide name input section and show message input section
-                document.getElementById("name-section").style.display = "none";
-                document.getElementById("message-section").style.display = "block";
-
-                // Enable the Send button
-                document.getElementById("sendBtn").disabled = false;
-            } else {
-                alert("Please enter a valid name.");
-            }
-        });
-
-        // Event listener for the "Send" button
-        document.getElementById("sendBtn").addEventListener("click", sendMessage);
 
         // Send message on "Enter" key press
-        document.getElementById("message").addEventListener("keypress", function (event) {
+        document.getElementById("message").addEventListener("keypress", function(event) {
             if (event.key === "Enter") {
-                sendMessage();
+                document.getElementById("sendBtn").click();
             }
         });
     </script>

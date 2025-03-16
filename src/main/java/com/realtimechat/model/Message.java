@@ -2,20 +2,19 @@ package com.realtimechat.model;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-@Document(collection = "messages")  // Ensure this matches your MongoDB collection
+@Document(collection = "messages")
 public class Message {
-    
+
     @Id
-    private String id; // MongoDB document ID
-    
-    @JsonProperty("name")  // Ensure correct JSON mapping
-    private String name;
-    
-    @JsonProperty("content")  // Ensure correct JSON mapping
-    private String content;
+    private String id;
+
+    @JsonProperty("name")
+    private String name; // User's name
+
+    @JsonProperty("content")
+    private String content; // Message content
 
     public Message() { }
 
